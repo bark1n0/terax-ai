@@ -16,14 +16,17 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { usePreferencesStore } from "@/modules/settings/preferences";
-import type { ThemePref } from "@/modules/settings/store";
+import type { IconThemeId, ThemePref } from "@/modules/settings/store";
 import {
+  ICON_THEMES,
+  ICON_THEME_LABELS,
   TERMINAL_FONT_SIZES,
   TERMINAL_SCROLLBACK_PRESETS,
   setAgentNotifications,
   setAutostart,
   setEditorAutoSave,
   setEditorAutoSaveDelay,
+  setIconTheme,
   setRestoreWindowState,
   setShowHidden,
   setTerminalFontFamily,
@@ -73,6 +76,7 @@ export function GeneralSection() {
   const editorAutoSave = usePreferencesStore((s) => s.editorAutoSave);
   const editorAutoSaveDelay = usePreferencesStore((s) => s.editorAutoSaveDelay);
   const showHidden = usePreferencesStore((s) => s.showHidden);
+  const iconTheme = usePreferencesStore((s) => s.iconTheme);
   const terminalWebglEnabled = usePreferencesStore(
     (s) => s.terminalWebglEnabled,
   );
@@ -194,6 +198,26 @@ export function GeneralSection() {
 
       <div className="flex flex-col gap-2">
         <Label>Explorer</Label>
+        <SettingRow
+          title="Icon theme"
+          description="File and folder icon set used in the explorer, tabs, source control and AI file picker."
+        >
+          <Select
+            value={iconTheme}
+            onValueChange={(v) => void setIconTheme(v as IconThemeId)}
+          >
+            <SelectTrigger size="sm" className="h-8 w-32 text-[12px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ICON_THEMES.map((id) => (
+                <SelectItem key={id} value={id} className="text-[12px]">
+                  {ICON_THEME_LABELS[id]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </SettingRow>
         <SettingRow
           title="Show hidden files"
           description="Include dot-prefixed files and folders (.env, .gitignore, .config) in the file explorer and search."
