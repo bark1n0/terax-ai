@@ -34,14 +34,13 @@ export const EDITOR_THEMES = [
 
 export type EditorThemeId = (typeof EDITOR_THEMES)[number];
 
-export const ICON_THEMES = ["catppuccin", "material", "vscode"] as const;
+export const ICON_THEMES = ["catppuccin", "material"] as const;
 
 export type IconThemeId = (typeof ICON_THEMES)[number];
 
 export const ICON_THEME_LABELS: Record<IconThemeId, string> = {
   catppuccin: "Catppuccin",
   material: "Material",
-  vscode: "VSCode",
 };
 
 export const EDITOR_THEME_LABELS: Record<EditorThemeId, string> = {

@@ -104,9 +104,6 @@ importers:
       '@iconify-json/material-icon-theme':
         specifier: ^1.2.66
         version: 1.2.66
-      '@iconify-json/vscode-icons':
-        specifier: ^1.2.51
-        version: 1.2.51
       '@lezer/highlight':
         specifier: ^1.2.3
         version: 1.2.3
@@ -932,9 +929,6 @@ packages:
 
   '@iconify-json/material-icon-theme@1.2.66':
     resolution: {integrity: sha512-TxWgH1twATqzvdMOafXf3V7NtgdLGkg77ySoEUo0uKv4cmzsy/8fHUZWNn6t9s7ZAzAjxf41ZIDdWIwxIsMrbQ==}
-
-  '@iconify-json/vscode-icons@1.2.51':
-    resolution: {integrity: sha512-8bTDcS4RnXo64gpjafl7aXAsU0K4rMGhVCTCoA3e5CDabvP8aQnyUjl7N1ozi1pVJPXOndHtl5CR7gJEGljNwQ==}
 
   '@iconify/types@2.0.0':
     resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
@@ -5337,10 +5331,6 @@ snapshots:
       '@iconify/types': 2.0.0
 
   '@iconify-json/material-icon-theme@1.2.66':
-    dependencies:
-      '@iconify/types': 2.0.0
-
-  '@iconify-json/vscode-icons@1.2.51':
     dependencies:
       '@iconify/types': 2.0.0
 

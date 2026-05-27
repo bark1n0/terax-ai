@@ -1,6 +1,5 @@
 import catppuccinIcons from "@iconify-json/catppuccin/icons.json";
 import materialIcons from "@iconify-json/material-icon-theme/icons.json";
-import vscodeIcons from "@iconify-json/vscode-icons/icons.json";
 import type { IconThemeId } from "@/modules/settings/store";
 import { EXT_TO_LANGUAGE_ID } from "./constants";
 import * as fileIconsMod from "./fileIcons";
@@ -21,12 +20,104 @@ type IconifySet = {
 const SETS: Record<IconThemeId, IconifySet> = {
   catppuccin: catppuccinIcons as unknown as IconifySet,
   material: materialIcons as unknown as IconifySet,
-  vscode: vscodeIcons as unknown as IconifySet,
 };
 
-const DEFAULT_FILE = "file";
-const DEFAULT_FOLDER = "folder";
-const DEFAULT_FOLDER_OPEN = "folder-open";
+// Per-theme generic fallback slugs. Catppuccin uses `file` / `folder` /
+// `folder-open`; Material publishes `document` / `folder-base` /
+// `folder-base-open` (matches Material Icon Theme upstream).
+const DEFAULT_FILE: Record<IconThemeId, string> = {
+  catppuccin: "file",
+  material: "document",
+};
+const DEFAULT_FOLDER: Record<IconThemeId, string> = {
+  catppuccin: "folder",
+  material: "folder-base",
+};
+const DEFAULT_FOLDER_OPEN: Record<IconThemeId, string> = {
+  catppuccin: "folder-open",
+  material: "folder-base-open",
+};
+
+// fileIcons.ts targets are written against the Catppuccin slug vocabulary.
+// Material uses different names for some common icons; remap on lookup so a
+// Catppuccin-named target still resolves to the right Material slug.
+const MATERIAL_SLUG_OVERRIDES: Record<string, string> = {
+  "typescript-react": "react-ts",
+  "javascript-react": "react",
+  "typescript-config": "tsconfig",
+  "typescript-test": "test-ts",
+  "javascript-test": "test-js",
+  "javascript-map": "javascript",
+  "javascript-config": "jsconfig",
+  "json-schema": "json",
+  "css-map": "css",
+  "c-header": "cppheader",
+  "cpp-header": "cppheader",
+  "ms-excel": "excel",
+  "ms-word": "word",
+  "ms-powerpoint": "powerpoint",
+  "java-class": "java",
+  "java-jar": "jar",
+  "go-template": "go",
+  "ruby-gem": "gemfile",
+  "ruby-gem-lock": "gemfile",
+  "npm-lock": "npm",
+  "yarn-lock": "yarn",
+  "pnpm-lock": "pnpm",
+  "bun-lock": "bun",
+  "cargo-lock": "cargo",
+  "python-config": "python",
+  "python-compiled": "python",
+  "nix-lock": "nix",
+  "dart-generated": "dart",
+  "godot-assets": "godot",
+  "code-of-conduct": "conduct",
+  "code-climate": "codeclimate",
+  "circle-ci": "circleci",
+  "docker-compose": "docker",
+  "docker-ignore": "docker",
+  "git-cliff": "git",
+  "markdown-mdx": "mdx",
+  "package-json": "nodejs",
+  "panda-css": "panda",
+  "pre-commit": "settings",
+  "prettier-ignore": "prettier",
+  "eslint-ignore": "eslint",
+  "stylelint-ignore": "stylelint",
+  "stylua-ignore": "stylua",
+  "semgrep-ignore": "semgrep",
+  "cursor-ignore": "cursor",
+  "nuxt-ignore": "nuxt",
+  "tauri-ignore": "tauri",
+  "vscode-ignore": "vscode",
+  "vercel-ignore": "vercel",
+  "vs-codium": "vscode",
+  "sonar-cloud": "sonarcloud",
+  "rust-config": "rust",
+  "web-assembly": "webassembly",
+  "ansible-lint": "ansible",
+  "lint-staged": "lintstaged",
+  "adobe-ae": "after-effects",
+  "adobe-ai": "illustrator",
+  "adobe-id": "indesign",
+  "adobe-ps": "photoshop",
+  "adobe-xd": "adobe",
+  "super-collider": "supercollider",
+  "storybook-svelte": "storybook",
+  "storybook-vue": "storybook",
+  "vue-config": "vue",
+  "svelte-config": "svelte",
+  "pesde-lock": "pesde",
+  "pixi-lock": "pixi",
+  "poetry-lock": "poetry",
+};
+
+function resolveSlug(theme: IconThemeId, name: string): string {
+  if (theme === "material") {
+    return MATERIAL_SLUG_OVERRIDES[name] ?? name.replace(/_/g, "-");
+  }
+  return name.replace(/_/g, "-");
+}
 
 const dataUrlCacheByTheme = new Map<IconThemeId, Map<string, string>>();
 
@@ -37,34 +128,6 @@ function getCache(theme: IconThemeId): Map<string, string> {
     dataUrlCacheByTheme.set(theme, m);
   }
   return m;
-}
-
-// Catppuccin's manifest emits names like `folder_src`/`typescript-react`, but
-// the iconify export normalizes everything to hyphenated slugs. Material Icon
-// Theme follows the same convention so we share the slug pipeline.
-function toIconifySlug(name: string): string {
-  return name.replace(/_/g, "-");
-}
-
-// VSCode Icons uses a different naming convention: `default_file`,
-// `default_folder`, `default_folder_opened`, `file_type_<name>`,
-// `folder_type_<name>` (+ `_opened` variant). Best-effort translation; missing
-// slugs fall back to default file/folder.
-function vscodeSlug(name: string): string {
-  if (name === DEFAULT_FILE) return "default_file";
-  if (name === DEFAULT_FOLDER) return "default_folder";
-  if (name === DEFAULT_FOLDER_OPEN) return "default_folder_opened";
-  if (name.startsWith("folder-")) {
-    const isOpen = name.endsWith("-open");
-    const inner = isOpen ? name.slice(7, -5) : name.slice(7);
-    const folderName = inner.replace(/-/g, "");
-    return isOpen ? `folder_type_${folderName}_opened` : `folder_type_${folderName}`;
-  }
-  return `file_type_${name.replace(/-/g, "")}`;
-}
-
-function slugForTheme(theme: IconThemeId, name: string): string {
-  return theme === "vscode" ? vscodeSlug(name) : toIconifySlug(name);
 }
 
 function bodyFromSet(set: IconifySet, slug: string): string | null {
@@ -84,17 +147,17 @@ function buildDataUrl(theme: IconThemeId, name: string): string | null {
   if (cached !== undefined) return cached || null;
 
   const set = SETS[theme];
-  const slug = slugForTheme(theme, name);
-  let body = bodyFromSet(set, slug);
+  let body = bodyFromSet(set, resolveSlug(theme, name));
 
-  // If a specific icon is missing in this theme, fall back to default file or
-  // folder slug instead of returning empty.
-  if (!body && name !== DEFAULT_FILE && name !== DEFAULT_FOLDER && name !== DEFAULT_FOLDER_OPEN) {
-    const fallback = name === DEFAULT_FOLDER_OPEN
-      ? slugForTheme(theme, DEFAULT_FOLDER_OPEN)
-      : name.startsWith("folder-") || name.endsWith("-open")
-        ? slugForTheme(theme, DEFAULT_FOLDER)
-        : slugForTheme(theme, DEFAULT_FILE);
+  // Fall back to per-theme default slug if specific icon is missing.
+  if (!body) {
+    const isFolderOpen = name === "folder-open" || name.endsWith("-open");
+    const isFolder = name === "folder" || name.startsWith("folder-") || isFolderOpen;
+    const fallback = isFolderOpen
+      ? DEFAULT_FOLDER_OPEN[theme]
+      : isFolder
+        ? DEFAULT_FOLDER[theme]
+        : DEFAULT_FILE[theme];
     body = bodyFromSet(set, fallback);
   }
 
@@ -147,7 +210,7 @@ export function fileIconUrl(name: string, theme: IconThemeId = "catppuccin"): st
     ext = ext.slice(nextDot + 1);
   }
 
-  return buildDataUrl(theme, DEFAULT_FILE) ?? "";
+  return buildDataUrl(theme, DEFAULT_FILE[theme]) ?? "";
 }
 
 export function folderIconUrl(
@@ -159,11 +222,14 @@ export function folderIconUrl(
 
   const mapped = catFolderNames[lower];
   if (mapped) {
-    const slug = toIconifySlug(mapped);
+    const slug = mapped.replace(/_/g, "-");
     const target = expanded ? `${slug}-open` : slug;
     const url = buildDataUrl(theme, target);
     if (url) return url;
   }
 
-  return buildDataUrl(theme, expanded ? DEFAULT_FOLDER_OPEN : DEFAULT_FOLDER) ?? "";
+  return buildDataUrl(
+    theme,
+    expanded ? DEFAULT_FOLDER_OPEN[theme] : DEFAULT_FOLDER[theme],
+  ) ?? "";
 }
