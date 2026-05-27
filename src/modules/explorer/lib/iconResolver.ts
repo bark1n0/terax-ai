@@ -11,10 +11,15 @@ const catLanguageIds = fileIconsMod.languageIds as Record<string, string>;
 const catFolderNames = folderIconsMod.folderNames as Record<string, string>;
 
 type IconifySet = {
-  icons: Record<string, { body: string; width?: number; height?: number }>;
+  icons: Record<
+    string,
+    { body: string; width?: number; height?: number; left?: number; top?: number }
+  >;
   aliases?: Record<string, { parent: string }>;
   width?: number;
   height?: number;
+  left?: number;
+  top?: number;
 };
 
 const SETS: Record<IconThemeId, IconifySet> = {
@@ -130,15 +135,37 @@ function getCache(theme: IconThemeId): Map<string, string> {
   return m;
 }
 
-type ResolvedIcon = { body: string; width?: number; height?: number };
+type ResolvedIcon = {
+  body: string;
+  width?: number;
+  height?: number;
+  left?: number;
+  top?: number;
+};
 
 function bodyFromSet(set: IconifySet, slug: string): ResolvedIcon | null {
   const direct = set.icons[slug];
-  if (direct) return { body: direct.body, width: direct.width, height: direct.height };
+  if (direct) {
+    return {
+      body: direct.body,
+      width: direct.width,
+      height: direct.height,
+      left: direct.left,
+      top: direct.top,
+    };
+  }
   const alias = set.aliases?.[slug];
   if (alias) {
     const parent = set.icons[alias.parent];
-    if (parent) return { body: parent.body, width: parent.width, height: parent.height };
+    if (parent) {
+      return {
+        body: parent.body,
+        width: parent.width,
+        height: parent.height,
+        left: parent.left,
+        top: parent.top,
+      };
+    }
   }
   return null;
 }
@@ -168,12 +195,15 @@ function buildDataUrl(theme: IconThemeId, name: string): string | null {
     return null;
   }
 
-  // Iconify allows per-icon dimensions; fall back to set-level (16x16 by
-  // Iconify convention) when missing. Material publishes per-icon
-  // width/height because its export mixes 16/24/32-px artwork.
+  // Iconify allows per-icon dimensions and viewBox origin (left/top); fall
+  // back to set-level (defaults: 0 0 16 16). Material mixes 16/24/32-px and
+  // Material-Design coordinate systems (e.g. JSON path uses left=0, top=-960,
+  // 960x960) so honouring left/top is required for non-cropped rendering.
   const w = resolved.width ?? set.width ?? 16;
   const h = resolved.height ?? set.height ?? 16;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${resolved.body}</svg>`;
+  const x = resolved.left ?? set.left ?? 0;
+  const y = resolved.top ?? set.top ?? 0;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} ${y} ${w} ${h}">${resolved.body}</svg>`;
   const url = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   cache.set(name, url);
   return url;
