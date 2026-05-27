@@ -11,7 +11,7 @@ const catLanguageIds = fileIconsMod.languageIds as Record<string, string>;
 const catFolderNames = folderIconsMod.folderNames as Record<string, string>;
 
 type IconifySet = {
-  icons: Record<string, { body: string }>;
+  icons: Record<string, { body: string; width?: number; height?: number }>;
   aliases?: Record<string, { parent: string }>;
   width?: number;
   height?: number;
@@ -130,13 +130,15 @@ function getCache(theme: IconThemeId): Map<string, string> {
   return m;
 }
 
-function bodyFromSet(set: IconifySet, slug: string): string | null {
+type ResolvedIcon = { body: string; width?: number; height?: number };
+
+function bodyFromSet(set: IconifySet, slug: string): ResolvedIcon | null {
   const direct = set.icons[slug];
-  if (direct) return direct.body;
+  if (direct) return { body: direct.body, width: direct.width, height: direct.height };
   const alias = set.aliases?.[slug];
   if (alias) {
     const parent = set.icons[alias.parent];
-    if (parent) return parent.body;
+    if (parent) return { body: parent.body, width: parent.width, height: parent.height };
   }
   return null;
 }
@@ -147,10 +149,10 @@ function buildDataUrl(theme: IconThemeId, name: string): string | null {
   if (cached !== undefined) return cached || null;
 
   const set = SETS[theme];
-  let body = bodyFromSet(set, resolveSlug(theme, name));
+  let resolved = bodyFromSet(set, resolveSlug(theme, name));
 
   // Fall back to per-theme default slug if specific icon is missing.
-  if (!body) {
+  if (!resolved) {
     const isFolderOpen = name === "folder-open" || name.endsWith("-open");
     const isFolder = name === "folder" || name.startsWith("folder-") || isFolderOpen;
     const fallback = isFolderOpen
@@ -158,17 +160,20 @@ function buildDataUrl(theme: IconThemeId, name: string): string | null {
       : isFolder
         ? DEFAULT_FOLDER[theme]
         : DEFAULT_FILE[theme];
-    body = bodyFromSet(set, fallback);
+    resolved = bodyFromSet(set, fallback);
   }
 
-  if (!body) {
+  if (!resolved) {
     cache.set(name, "");
     return null;
   }
 
-  const w = set.width ?? 16;
-  const h = set.height ?? 16;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${body}</svg>`;
+  // Iconify allows per-icon dimensions; fall back to set-level (16x16 by
+  // Iconify convention) when missing. Material publishes per-icon
+  // width/height because its export mixes 16/24/32-px artwork.
+  const w = resolved.width ?? set.width ?? 16;
+  const h = resolved.height ?? set.height ?? 16;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${resolved.body}</svg>`;
   const url = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   cache.set(name, url);
   return url;
